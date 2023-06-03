@@ -1,8 +1,8 @@
 {
-  "name": "portfolio",
+  "name": "image-plagiarism-detector",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "http://127.0.0.1:5000",
   "dependencies": {
     "@react-pdf/renderer": "^2.2.0",
     "@testing-library/jest-dom": "^5.16.2",
@@ -19,6 +19,7 @@
     "react-pdf": "^5.7.1",
     "react-router-dom": "^6.2.2",
     "react-scripts": "5.0.0",
+    "react-spinners": "^0.13.8",
     "react-tsparticles": "^1.42.2",
     "typewriter-effect": "^2.18.2",
     "web-vitals": "^2.1.4"

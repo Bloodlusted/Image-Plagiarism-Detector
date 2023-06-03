@@ -9,6 +9,9 @@ import re
 import spacy
 import torch
 from datetime import datetime
+import base64
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing
@@ -61,9 +64,12 @@ def upload_files():
     for file in files:
         if file.filename == "":
             return {"error": "No file selected"}, 400
+        
+        # Get the secure filename to avoid any path traversal or malicious filename issues
+        filename = secure_filename(file.filename)
 
         # Save the file to a temporary folder called "uploads":
-        file_path = "uploads/" + file.filename
+        file_path = os.path.join("uploads", filename)
         file.save(file_path)
 
         # Read the file data
@@ -112,13 +118,19 @@ def upload_files():
             similarity = doc1.similarity(doc2) * 100
             similarity = float("{:.2f}".format(similarity))  # Convert to float with 2 decimal places
             if similarity >= 80:
-                similarity_results.append({"filename": doc["filename"], "similarity": "{:.2f}%".format(similarity)})
+                similarity_results.append({
+                    "filename": doc["filename"],
+                    "data": base64.b64encode(doc["data"]).decode('utf-8'),
+                    "similarity": "{:.2f}%".format(similarity)
+                })
 
         # Update the similarity field in the uploaded image document
         collection.update_one(
             {"_id": ObjectId(result.inserted_id)},
             {"$set": {"similarity": similarity_results}}
         )
+
+        os.remove(file_path)
 
     return {"success": "Images uploaded successfully", "file_ids": inserted_ids}, 200
 
@@ -135,24 +147,6 @@ def clear_results():
     collection.delete_many({"similarity": {"$exists": True}})
     return {"success": "Results cleared successfully"}, 200
 
-
-@app.route("/api/download/<file_id>", methods=["GET"])
-def download_image(file_id):
-    # Find the file document by its ID
-    document = collection.find_one({"_id": ObjectId(file_id)})
-    if not document:
-        return {"error": "File not found"}, 404
-
-    # Extract the file data from the document
-    file_data = document["data"]
-    file_name = document["filename"]
-
-    # Save the file data to the downloads folder
-    output_path = f"downloads/{file_name}"
-    with open(output_path, "wb") as file:
-        file.write(file_data)
-
-    return {"success": "File downloaded successfully", "file_path": output_path}, 200
 
 if __name__ == "__main__":
     app.run()

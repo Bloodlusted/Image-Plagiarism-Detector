@@ -6,6 +6,7 @@ import Home2 from "./Home2";
 import Type from "./Type";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { PulseLoader } from "react-spinners";
 
 function Home() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ function Home() {
 
     // Make the POST request to the Flask API
     try {
-      const response = await axios.post("http://localhost:5000/api/upload", formData);
+      const response = await axios.post("/api/upload", formData);
       if (response.status === 200) {
         console.log("Images uploaded successfully");
         // Redirect to the results page
@@ -55,16 +56,16 @@ function Home() {
           <Row>
             <Col md={7} className="home-header">
               <h1 style={{ paddingBottom: 15 }} className="heading"></h1>
-
+  
               <h1 className="heading-name">
                 <strong className="main-name">Image Plagiarism Detector</strong>
               </h1>
-
+  
               <div style={{ padding: 50, textAlign: "left" }}>
                 <Type />
               </div>
             </Col>
-
+  
             <Col md={5} style={{ paddingBottom: 20 }}>
               <img
                 src={homeLogo}
@@ -77,14 +78,14 @@ function Home() {
         </Container>
         {selectedFiles.length > 0 && (
           <div style={{ position: "relative" }}>
-            <h2 style={{ color: "white" }}>Selected Images</h2>
+            <h2 style={{ color: "white" }}>Uploading Images <PulseLoader color="#c770f0" /></h2>
             <div>
               {selectedFiles.map((file, index) => (
                 <img
                   key={index}
                   src={URL.createObjectURL(file)}
                   alt={`selected image ${index}`}
-                  style={{ maxHeight: "300px", marginRight: "10px" }}
+                  style={{ maxWidth: "100%", maxHeight: "300px", margin: "10px" }}
                 />
               ))}
             </div>
@@ -92,19 +93,38 @@ function Home() {
         )}
       </Container>
       <Home2 />
-
+  
       {selectedFiles.length === 0 && (
+        <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", flexWrap: "wrap"}}>
+        <label htmlFor="file-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-225px" }}>
+          Upload Files
+        </label>
         <input
           type="file"
           accept="image/*"
           multiple
           onChange={handleFileUpload}
           id="file-upload"
-          style={{ color: "#cd5ff8", position: "relative", top: "-250px" }}
+          style={{ display: "none" }}
         />
+        <label htmlFor="folder-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-225px" }}>
+          Upload Folder
+        </label>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileUpload}
+          id="folder-upload"
+          webkitdirectory="true"
+          style={{ display: "none" }}
+        />
+      </div>
+      
       )}
     </section>
   );
+  
 }
 
 export default Home;

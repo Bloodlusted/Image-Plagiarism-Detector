@@ -4,6 +4,7 @@ import Button from "react-bootstrap/Button";
 import { CgWebsite } from "react-icons/cg";
 import { BsGithub } from "react-icons/bs";
 
+// Unused for now
 function ResultsCards(props) {
   return (
     <Card className="project-card-view">
