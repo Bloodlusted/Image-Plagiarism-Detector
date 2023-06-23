@@ -78,7 +78,6 @@ function Home() {
         </Container>
         {selectedFiles.length > 0 && (
           <div style={{ position: "relative" }}>
-            <h2 style={{ color: "white" }}>Uploading Images <PulseLoader color="#c770f0" /></h2>
             <div>
               {selectedFiles.map((file, index) => (
                 <img
@@ -88,6 +87,7 @@ function Home() {
                   style={{ maxWidth: "100%", maxHeight: "300px", margin: "10px" }}
                 />
               ))}
+            <h2 style={{ color: "white", marginTop:30 }}>Uploading Images <PulseLoader color="#c770f0" /></h2>
             </div>
           </div>
         )}

@@ -65,11 +65,11 @@ function Results() {
                 return (
                   <Col md={6} className="project-card" key={index}>
                     <div className="project-info">
-                      <h4 style={{ color: "#c770f0", marginBottom: "0.7em" }}>{result.filename}</h4>
+                      <h4 className="purple" style={{ marginBottom: "0.7em" }}>{result.filename}</h4>
                       {validSimilarities.map((similarity, similarityIndex) => (
                         <h6 key={similarityIndex} style={{ color: "#FFFFF0" }}>
                           Similarity with {similarity.filename} - <span style={{ color: "#d9f070", fontSize: "1.1em", fontWeight: "bold" }}>{similarity.similarity}</span><br/><br/>
-                          <img src={`data:image/gif;base64,${similarity.data}`} alt={`Similar Image ${similarityIndex}`} style={{ maxWidth: "100%", height: "auto" }} />
+                          <img src={`data:image/gif;base64,${similarity.data}`} alt={`Similar Image ${similarityIndex}`} style={{ maxWidth: "100%", height: "auto", marginBottom: 40 }} />
                         </h6>
                       ))}
                     </div>
