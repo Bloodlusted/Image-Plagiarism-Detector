@@ -1,0 +1,9 @@
+easyocr==1.6.2
+en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.4.1/en_core_web_md-3.4.1-py3-none-any.whl
+Flask
+Flask-Cors
+numpy
+Pillow==9.2.0
+pymongo==4.3.3
+spacy==3.4.4
+torch==2.0.1

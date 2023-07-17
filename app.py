@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from pymongo import MongoClient
 from PIL import Image
@@ -10,16 +10,18 @@ from datetime import datetime
 import base64
 import os
 import re
-from werkzeug.utils import secure_filename
+import hashlib
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'FYP'
 CORS(app)  # Enable Cross-Origin Resource Sharing
 
 # Configure MongoDB Atlas connection
-uri = "mongodb+srv://admin:republicpoly@cluster0.tyf7yym.mongodb.net/images?retryWrites=true&w=majority"
+uri = "mongodb+srv://admin:republicpoly@cluster0.tyf7yym.mongodb.net/?retryWrites=true&w=majority"
 client = MongoClient(uri)
-db = client["images"]
-collection = db["ERD"]
+db = client["FYP"]
+collection = db["images"]
+users_collection = db["users"]
 
 # Load the spaCy model
 nlp = spacy.load('en_core_web_md')
@@ -69,35 +71,26 @@ def upload_files():
     if "files" not in request.files:
         return {"error": "No files provided"}, 400
 
-    files = request.files.getlist("files")
+    files = request.files.getlist("files") # Retrieve the list of uploaded files
     inserted_ids = []
 
     for file in files:
         if file.filename == "":
             return {"error": "No file selected"}, 400
-        
-        # Get the secure filename to avoid any path traversal or malicious filename issues
-        filename = secure_filename(file.filename)
-
-        # Save the file to a temporary "uploads" folder:
-        file_path = os.path.join("uploads", filename)
-        file.save(file_path)
 
         # Read file data
-        with open(file_path, "rb") as file_obj:
-            file_data = file_obj.read()
+        file_data = file.stream.read()
 
         document = {
             "data": file_data,
             "filename": file.filename,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "uploaded_by": session.get("username")
         }
 
         # Insert document into MongoDB database
         result = collection.insert_one(document)
         inserted_ids.append(str(result.inserted_id))
-
-        os.remove(file_path)
 
     # Perform object detection and text extraction
     for doc in collection.find():
@@ -113,7 +106,11 @@ def upload_files():
             # Print the extracted text to console
             print("Text extracted from", doc["filename"])
             for i, text in enumerate(extracted_text_list, 1):
-                print("Table", i, ":\n", text)
+                table_name, *attributes = text.split()
+                table_label = table_name.capitalize()
+                print("Table:", table_label)
+                print("Attributes:", ' '.join(attributes))
+                print()
             print()
 
             # Update the documents with extracted text
@@ -123,12 +120,12 @@ def upload_files():
             )
 
     # Perform similarity comparison using pre-extracted text
-    for doc in collection.find():
+    for doc in collection.find({"uploaded_by": session.get("username")}):
         if "text" in doc:
             similarity_results = []
             current_text_list = doc["text"]
 
-            for other_doc in collection.find({"_id": {"$ne": doc["_id"]}, "text": {"$exists": True}}):
+            for other_doc in collection.find({"_id": {"$ne": doc["_id"]}, "text": {"$exists": True}, "uploaded_by": session.get("username")}):
                 other_text_list = other_doc["text"]
                 other_filename = other_doc["filename"]
 
@@ -155,16 +152,37 @@ def upload_files():
 
 @app.route("/api/results", methods=["GET"])
 def get_results():
+    username = session.get("username")
     similarity_results = []
-    for document in collection.find():
+    for document in collection.find({"uploaded_by": username}):
         similarity_results.append({"filename": document["filename"], "similarity": document.get("similarity", "")})
 
     return jsonify({"results": similarity_results}), 200
 
 @app.route("/api/clear", methods=["POST"])
 def clear_results():
-    collection.delete_many({"similarity": {"$exists": True}})
+    username = session.get("username")
+    collection.delete_many({"similarity": {"$exists": True}, "uploaded_by": username})
     return {"success": "Results cleared successfully"}, 200
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    username = request.json.get("username")
+    password = request.json.get("password")
+
+    # Hash the password using SHA-256
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
+    # Check if the username and hashed password match the records in the users collection
+    user = users_collection.find_one({"username": username, "password": hashed_password})
+
+    if user:
+        # Successful login
+        session["username"] = user["username"]
+        return jsonify({"message": "Login successful", "username": user["username"]}), 200
+    else:
+        # Failed login
+        return jsonify({"message": "Invalid username or password"}), 401
 
 
 if __name__ == "__main__":

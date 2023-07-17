@@ -1,20 +1,18 @@
 import React, { useState } from "react";
 import Navbar from "react-bootstrap/Navbar";
+import { NavDropdown } from "react-bootstrap";
 import Nav from "react-bootstrap/Nav";
 import Container from "react-bootstrap/Container";
-import Button from "react-bootstrap/Button";
 import { Link } from "react-router-dom";
-import { CgGitFork } from "react-icons/cg";
-import { ImBlog } from "react-icons/im";
 import {
   AiOutlineHome,
   AiOutlineFund,
+  AiOutlineInfoCircle,
   AiOutlineUser,
+  AiOutlineLogout,
 } from "react-icons/ai";
 
-import { CgFileDocument } from "react-icons/cg";
-
-function NavBar() {
+function NavBar({ isLoggedIn, handleLogout, username }) {
   const [expand, updateExpanded] = useState(false);
   const [navColour, updateNavbar] = useState(false);
 
@@ -50,7 +48,7 @@ function NavBar() {
           <Nav className="ms-auto" defaultActiveKey="#home">
             <Nav.Item>
               <Nav.Link as={Link} to="/" onClick={() => updateExpanded(false)}>
-                <AiOutlineHome style={{ marginBottom: "2px" }} /> Home
+                <AiOutlineHome style={{ marginBottom: "4px" }} /> Home
               </Nav.Link>
             </Nav.Item>
 
@@ -60,19 +58,29 @@ function NavBar() {
                 to="/about"
                 onClick={() => updateExpanded(false)}
               >
-                <AiOutlineUser style={{ marginBottom: "2px" }} /> About
+                <AiOutlineInfoCircle style={{ marginBottom: "4px" }} /> About
               </Nav.Link>
             </Nav.Item>
 
-            <Nav.Item>
-              <Nav.Link
+            {isLoggedIn && (
+              <Nav.Item>
+                <Nav.Link
                 as={Link}
                 to="/results"
                 onClick={() => updateExpanded(false)}
               >
-                <AiOutlineFund style={{ marginBottom: "2px" }} /> Results
+                <AiOutlineFund style={{ marginBottom: "4px" }} /> Results
               </Nav.Link>
             </Nav.Item>
+            )}
+
+            {isLoggedIn && (
+              <NavDropdown title={<span><AiOutlineUser style={{ marginBottom: "4px"}} /> {username}</span>} id="nav-dropdown" className="dropdown">
+                <NavDropdown.Item onClick={handleLogout}>
+                  <AiOutlineLogout style={{ marginBottom: "4px" }} /> Logout
+                </NavDropdown.Item>
+              </NavDropdown>
+            )}
 
             
           </Nav>

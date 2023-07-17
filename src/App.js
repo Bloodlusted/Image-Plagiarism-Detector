@@ -19,6 +19,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
   const [load, upadateLoad] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Assume user is not logged in initially
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,16 +30,32 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const isLoggedInStorage = localStorage.getItem("isLoggedIn");
+    const usernameStorage = localStorage.getItem("username");
+    if (isLoggedInStorage === "true") {
+      setIsLoggedIn(true);
+      setUsername(usernameStorage);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername("");
+    localStorage.removeItem("isLoggedIn"); // Remove the login status from localStorage
+    localStorage.removeItem("username");
+  };
+
   return (
     <Router>
       <Preloader load={load} />
       <div className="App" id={load ? "no-scroll" : "scroll"}>
-        <Navbar />
+        <Navbar isLoggedIn={isLoggedIn} username={username} handleLogout={handleLogout} />
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setUsername={setUsername} />} />
           <Route path="/about" element={<About />} />
-          <Route path="/results" element={<Results />} />
+          <Route path="/results" element={<Results isLoggedIn={isLoggedIn} />} />
           <Route path="*" element={<Navigate to="/"/>} />
         </Routes>
         <Footer />

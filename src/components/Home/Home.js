@@ -8,7 +8,81 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { PulseLoader } from "react-spinners";
 
-function Home() {
+// Separate login form component
+function LoginForm({ setIsLoggedIn, setUsername }) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleLogin = async (event) => {
+    event.preventDefault(); // Prevent form submission
+    const username = event.target.username.value;
+    const password = event.target.password.value;
+
+    try {
+      const response = await axios.post("/api/login", { username, password });
+
+      if (response.status === 200) {
+        setIsLoggedIn(true); // Update login status after successful login
+        setUsername(response.data.username);
+        localStorage.setItem("isLoggedIn", true); // Set the login status in localStorage
+        localStorage.setItem("username", response.data.username);
+        setError(null);
+      } else {
+        setError("Error logging in");
+        // Handle login failure
+      }
+    } catch (error) {
+      setError(error.response.data.message); // Set the error message from the API response
+      // Handle error condition
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setPasswordVisible(!passwordVisible);
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      <label>
+        <input type="text" name="username" placeholder=" " required />
+        <p style={{ cursor: "text", color: "#c770f0" }}>Username</p>
+      </label>
+      <label>
+        <input
+          type={passwordVisible ? "text" : "password"}
+          name="password"
+          placeholder=" "
+          required
+        />
+        <p style={{ cursor: "text", color: "#c770f0" }}>Password</p>
+        <div className="password-icon">
+          {passwordVisible ? (
+            <img
+              src={process.env.PUBLIC_URL + "/eye.svg"}
+              alt="Hide Password"
+              style={{maxWidth: "1.2rem"}}
+              onClick={togglePasswordVisibility}
+            />
+          ) : (
+            <img
+              src={process.env.PUBLIC_URL + "/eye-off.svg"}
+              alt="Show Password"
+              style={{maxWidth: "1.2rem"}}
+              onClick={togglePasswordVisibility}
+            />
+          )}
+        </div>
+      </label>
+      <br />
+      <button type="submit" className="cssbutton">
+        Login
+      </button>
+      {error && <h6 style={{ color: "red",marginTop: "15px" }}>{error}</h6>}
+    </form>
+  );
+}
+
+function Home({ isLoggedIn, setIsLoggedIn, setUsername }) {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState([]);
 
@@ -92,11 +166,18 @@ function Home() {
           </div>
         )}
       </Container>
+      {selectedFiles.length === 0 && !isLoggedIn && (
+        <div className="blurred-background">
+          <div className="login">
+            <LoginForm setIsLoggedIn={setIsLoggedIn} setUsername={setUsername} />
+          </div>
+        </div>
+      )}
       <Home2 />
   
-      {selectedFiles.length === 0 && (
+      {selectedFiles.length === 0 && isLoggedIn && (
         <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", flexWrap: "wrap"}}>
-        <label htmlFor="file-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-225px" }}>
+        <label htmlFor="file-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-250px" }}>
           Upload Files
         </label>
         <input
@@ -107,7 +188,7 @@ function Home() {
           id="file-upload"
           style={{ display: "none" }}
         />
-        <label htmlFor="folder-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-225px" }}>
+        <label htmlFor="folder-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-250px" }}>
           Upload Folder
         </label>
         <input
@@ -120,7 +201,7 @@ function Home() {
           style={{ display: "none" }}
         />
       </div>
-      
+
       )}
     </section>
   );

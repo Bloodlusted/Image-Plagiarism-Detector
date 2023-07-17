@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
+import { useNavigate } from 'react-router-dom';
 import Particle from "../Particle";
 import axios from "axios";
 
-function Results() {
+function Results({ isLoggedIn }) {
+  const navigate = useNavigate();
   const [similarityResults, setSimilarityResults] = useState([]);
 
   useEffect(() => {
-    fetchResults();
-  }, []);
+    if (!isLoggedIn) {
+      navigate('/'); // Redirect to main home page if user is not logged in
+    } else {
+      fetchResults();
+    }
+  }, [isLoggedIn, navigate]);
 
   const fetchResults = async () => {
     try {
@@ -36,8 +42,8 @@ function Results() {
           <h1 className="project-heading">
             <strong className="purple">Results</strong>
           </h1>
-          <p style={{ color: "white" }}>
-            <h5>This is how similar your image is compared to other images from our database.</h5>
+          <p style={{ color: "white", fontSize:"1.25em" }}>
+            This is how similar your image is compared to other images from our database.
           </p>
           <Row style={{ justifyContent: "center", paddingBottom: "10px" }}>
             {similarityResults.length === 0 || similarityResults.every(result => result.similarity.length === 0) ? (
@@ -69,7 +75,7 @@ function Results() {
                       {validSimilarities.map((similarity, similarityIndex) => (
                         <h6 key={similarityIndex} style={{ color: "#FFFFF0" }}>
                           Similarity with {similarity.filename} - <span style={{ color: "#d9f070", fontSize: "1.1em", fontWeight: "bold" }}>{similarity.similarity}</span><br/><br/>
-                          <img src={`data:image/gif;base64,${similarity.data}`} alt={`Similar Image ${similarityIndex}`} style={{ maxWidth: "100%", height: "auto", marginBottom: 40 }} />
+                          <img src={`data:image/png;base64,${similarity.data}`} alt={`Similar Image ${similarityIndex}`} style={{ maxWidth: "100%", height: "auto", marginBottom: 40 }} />
                         </h6>
                       ))}
                     </div>
