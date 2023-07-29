@@ -68,6 +68,7 @@ def extract_text_from_objects(image, results):
 
 @app.route("/api/upload", methods=["POST"])
 def upload_files():
+    threshold = int(request.form.get("similarityThreshold", 80))
     if "files" not in request.files:
         return {"error": "No files provided"}, 400
 
@@ -85,7 +86,8 @@ def upload_files():
             "data": file_data,
             "filename": file.filename,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "uploaded_by": session.get("username")
+            "uploaded_by": session.get("username"),
+            "threshold": str(threshold)+"%"
         }
 
         # Insert document into MongoDB database
@@ -134,7 +136,7 @@ def upload_files():
                 similarity = doc1.similarity(doc2) * 100
                 similarity = float("{:.2f}".format(similarity))
 
-                if similarity >= 80:
+                if similarity >= threshold:
                     similarity_results.append({
                         "filename": other_filename,
                         "data": base64.b64encode(other_doc["data"]).decode('utf-8'),
@@ -162,7 +164,7 @@ def get_results():
 @app.route("/api/clear", methods=["POST"])
 def clear_results():
     username = session.get("username")
-    collection.delete_many({"similarity": {"$exists": True}, "uploaded_by": username})
+    collection.delete_many({"uploaded_by": username})
     return {"success": "Results cleared successfully"}, 200
 
 @app.route("/api/login", methods=["POST"])

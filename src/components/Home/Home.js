@@ -85,6 +85,11 @@ function LoginForm({ setIsLoggedIn, setUsername }) {
 function Home({ isLoggedIn, setIsLoggedIn, setUsername }) {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [sliderValue, setSliderValue] = useState(80);
+
+  const handleSliderChange = (event) => {
+    setSliderValue(event.target.value);
+  };
 
   useEffect(() => {
     if (selectedFiles.length > 0) {
@@ -104,6 +109,9 @@ function Home({ isLoggedIn, setIsLoggedIn, setUsername }) {
     for (let i = 0; i < files.length; i++) {
       formData.append("files", files[i]);
     }
+
+    // Append the similarity threshold to the FormData
+    formData.append("similarityThreshold", sliderValue);
 
     // Make the POST request to the Flask API
     try {
@@ -175,34 +183,52 @@ function Home({ isLoggedIn, setIsLoggedIn, setUsername }) {
       )}
       <Home2 />
   
+      <div>
       {selectedFiles.length === 0 && isLoggedIn && (
-        <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", flexWrap: "wrap"}}>
-        <label htmlFor="file-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-250px" }}>
-          Upload Files
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileUpload}
-          id="file-upload"
-          style={{ display: "none" }}
-        />
-        <label htmlFor="folder-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-250px" }}>
-          Upload Folder
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileUpload}
-          id="folder-upload"
-          webkitdirectory="true"
-          style={{ display: "none" }}
-        />
-      </div>
-
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div className="upload-container" style={{ display: "flex", flexDirection: "row", justifyContent: "center", flexWrap: "wrap"}}>
+            <label htmlFor="file-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-250px" }}>
+              Upload Files
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileUpload}
+              id="file-upload"
+              style={{ display: "none" }}
+            />
+            <label htmlFor="folder-upload" className="cssbutton" style={{ margin: "5px", color: "white", top: "-250px" }}>
+              Upload Folder
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileUpload}
+              id="folder-upload"
+              webkitdirectory="true"
+              style={{ display: "none" }}
+            />
+          </div>
+          <div className="slider-container">
+            <div>
+              <input
+              type="range"
+              min="1"
+              max="100"
+              value={sliderValue}
+              className="slider"
+              id="myRange"
+              style={{ '--progress': `${sliderValue}%` }}
+              onChange={handleSliderChange}
+              />
+              <h5 style={{color:"#f0f0f0", margin: "20px", paddingBottom: "100px"}}>Similarity threshold: <span style={{color:"#d3ff08", fontWeight: "bold"}}>{sliderValue} %</span></h5>
+            </div>
+          </div>
+        </div>
       )}
+    </div>
     </section>
   );
   
