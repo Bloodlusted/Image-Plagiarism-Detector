@@ -9,7 +9,7 @@ function Type() {
           "Compare Similarity between Images",
           "Outputs Similarity Score in %",
           "Lists sources of Plagiarism",
-          "Powered by Computer Vision",
+          "Powered by Artificial Intelligence",
         ],
         autoStart: true,
         loop: true,

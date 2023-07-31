@@ -27,7 +27,7 @@ users_collection = db["users"]
 nlp = spacy.load('en_core_web_md')
 
 # Load the object detection model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/exp/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='tables.pt')
 
 # Load the easyocr model
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
