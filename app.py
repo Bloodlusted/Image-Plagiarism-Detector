@@ -22,6 +22,7 @@ client = MongoClient(uri)
 db = client["FYP"]
 collection = db["images"]
 users_collection = db["users"]
+tables_collection = db["tables"]
 
 # Load the spaCy model
 nlp = spacy.load('en_core_web_md')
@@ -49,8 +50,9 @@ def extract_text(image):
 
 # Function to extract text from detected objects in an image
 def extract_text_from_objects(image, results):
-    # Create a dictionary to store the extracted text for each table and attributes
+    # Create a dictionaries to store the extracted text and image data for each table
     tables = {}
+    table_images = {}
 
     # Access object properties from the results
     for index, row in results.pandas().xyxy[0].iterrows():
@@ -61,10 +63,17 @@ def extract_text_from_objects(image, results):
 
             # Perform OCR on the ROI
             data = extract_text(roi)
-            tables[index] = data
+            table_name, *_ = data.split()
+            tables[table_name] = data
+
+            # Convert the cropped table image to base64
+            buffered = io.BytesIO()
+            Image.fromarray(roi).save(buffered, format="PNG")
+            table_image_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            table_images[table_name] = table_image_base64
 
     # Return the extracted text for the detected objects
-    return list(tables.values())
+    return list(tables.values()), table_images
 
 @app.route("/api/upload", methods=["POST"])
 def upload_files():
@@ -96,39 +105,46 @@ def upload_files():
 
     # Perform object detection and text extraction
     for doc in collection.find():
-        if "text" not in doc:
+        if "tables" not in doc:
             image_data = doc["data"]
             image = Image.open(io.BytesIO(image_data))
             results = model(image)
-            extracted_text_list = extract_text_from_objects(image, results)
+            extracted_text_list, table_images = extract_text_from_objects(image, results)
             
             # Clean extracted text
             extracted_text_list = [re.sub(r'Indexes', '', re.sub(r'[\W_]+', ' ', re.sub(r'\d+', '', text))) for text in extracted_text_list]
+            extracted_text_dict = {}
+
+            for text in extracted_text_list:
+                table_name, *attributes = text.split()
+                extracted_text_dict[table_name] = ' '.join(attributes)
 
             # Print the extracted text to console
             print("Text extracted from", doc["filename"])
-            for i, text in enumerate(extracted_text_list, 1):
-                table_name, *attributes = text.split()
-                table_label = table_name.capitalize()
-                print("Table:", table_label)
-                print("Attributes:", ' '.join(attributes))
+            for table_name, attributes in extracted_text_dict.items():
+                print("Table:", table_name)
+                print("Attributes:", attributes)
                 print()
             print()
 
             # Update the documents with extracted text
             collection.update_one(
                 {"_id": doc["_id"]},
-                {"$set": {"text": extracted_text_list}}
+                {"$set": {"tables": extracted_text_dict, "table_images": table_images}}
             )
 
     # Perform similarity comparison using pre-extracted text
     for doc in collection.find({"uploaded_by": session.get("username")}):
-        if "text" in doc:
+        if "tables" in doc:
             similarity_results = []
-            current_text_list = doc["text"]
+            current_text_list = []
+            for key, value in doc["tables"].items():
+                current_text_list.extend([key, value])
 
-            for other_doc in collection.find({"_id": {"$ne": doc["_id"]}, "text": {"$exists": True}, "uploaded_by": session.get("username")}):
-                other_text_list = other_doc["text"]
+            for other_doc in collection.find({"_id": {"$ne": doc["_id"]}, "tables": {"$exists": True}, "uploaded_by": session.get("username")}):
+                other_text_list = []
+                for key, value in other_doc["tables"].items():
+                    other_text_list.extend([key, value])
                 other_filename = other_doc["filename"]
 
                 doc1 = nlp(' '.join(current_text_list))
